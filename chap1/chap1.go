@@ -78,12 +78,34 @@ func main() {
 		// 	return
 		// }
 	}
-	// predict := predictMatrix(x[0], w)
+	predict := predictMatrix(x[0], w)
+	writePredict(reShapeMatrix(x[0], 1), predict)
 	// fmt.Println(predict)
 
 	x1 := float64(50)
 	y1 := w[0][0] + w[0][1]*x1
-	fmt.Println("The prices of area 50m^2 is: ", y1)
+	fmt.Println("The house's price for 50m^2 is: ", y1)
+}
+
+func writePredict(root [][]float64, predict [][]float64) {
+	file, err := os.Create("predict_result.csv")
+	if err != nil {
+		log.Println(err)
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	writer.Write([]string{"Diện tích", "Giá"})
+	for index := range predict[0] {
+		house := fmt.Sprintf("%f", root[0][index])
+		price := fmt.Sprintf("%f", predict[0][index])
+		err := writer.Write([]string{house, price})
+		if err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 func predictMatrix(a [][]float64, b [][]float64) [][]float64 {
