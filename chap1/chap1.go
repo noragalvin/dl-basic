@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chap1/libs"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -84,7 +85,10 @@ func main() {
 
 	x1 := float64(50)
 	y1 := w[0][0] + w[0][1]*x1
+	fmt.Println("----PREDICT BY MYSELF----")
 	fmt.Println("The house's price for 50m^2 is: ", y1)
+	fmt.Println("\n\n----PREDICT WITH LIBS----")
+	libs.PredictWithLibs()
 }
 
 func writePredict(root [][]float64, predict [][]float64) {
