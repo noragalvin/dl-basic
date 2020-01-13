@@ -8,3 +8,5 @@ require (
 	github.com/sjwhitworth/golearn v0.0.0-20191230161259-3e43e74895fb
 	gonum.org/v1/gonum v0.6.2 // indirect
 )
+
+go 1.13
