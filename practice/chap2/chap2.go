@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	csvfile, err := os.Open("dataset.csv")
+	csvfile, err := os.Open("or.csv")
 	if err != nil {
 		log.Fatalln("Couldn't open the csv file", err)
 	}
