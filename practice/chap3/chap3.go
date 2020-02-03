@@ -4,11 +4,16 @@ import (
 	"encoding/csv"
 	"io"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"strconv"
 	"time"
 )
+
+var nNodes []int
+var activations [][]float64
+var weights [][][]float64
 
 func main() {
 	csvfile, err := os.Open("xor.csv")
@@ -20,7 +25,7 @@ func main() {
 	r := csv.NewReader(csvfile)
 
 	var input [][]float64
-	var output []float64
+	var output [][]float64
 	// Number of records
 	var N int
 
@@ -45,7 +50,7 @@ func main() {
 
 		input = append(input, xi)
 
-		output = append(output, c)
+		output = append(output, []float64{c})
 		N++
 	}
 
@@ -53,7 +58,11 @@ func main() {
 	log.Println("Output: ", output)
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{3}
+	hiddenLayers := []int{4}
+	numOfIteration := 10000
+
+	learningRate := 0.1
+	log.Println("Learning Rate: ", learningRate)
 	for i := 0; i < len(hiddenLayers); i++ {
 		layers = append(layers, hiddenLayers[i])
 	}
@@ -61,7 +70,6 @@ func main() {
 
 	log.Println("Layers: ", layers)
 
-	nNodes := []int{}
 	for i := 0; i < len(layers)-1; i++ {
 		nNodes = append(nNodes, layers[i]+1) // +1 for bias
 	}
@@ -72,7 +80,7 @@ func main() {
 	// totalNodes := 0
 
 	// Init matrix
-	weights := make([][][]float64, len(nNodes)-1)
+	weights = make([][][]float64, len(nNodes)-1)
 
 	for i := 0; i < len(weights); i++ {
 		weights[i] = make([][]float64, nNodes[i])
@@ -86,10 +94,6 @@ func main() {
 	for i := 0; i < len(nNodes)-1; i++ {
 		for j := 0; j < nNodes[i]; j++ {
 			for k := 0; k < nNodes[i+1]; k++ {
-				// if j == 0 {
-				// 	weights[i][j][k] = 1 // init bias = 1
-				// 	continue
-				// }
 				weights[i][j][k] = randFloats(-1, 1)
 			}
 		}
@@ -97,31 +101,67 @@ func main() {
 
 	log.Println(weights)
 
-	activations := [][]float64{}
-
-	// Feedforwards
-	// init activations
 	for i := 0; i < len(nNodes); i++ {
 		activations = append(activations, vector(nNodes[i], 1.0))
 	}
 
-	// for i := 0; i < nNodes[0]-1; i++ {
-	// 	activations[0][i] = input[i]
-	// }
+	for i := 0; i < numOfIteration; i++ {
+		loss := float64(0)
+		for j := 0; j < len(input); j++ {
+			// Feedforwards
+			feedForwards(input[j])
 
-	log.Println("Activations: ", activations)
+			// Back propagate
+			loss += backPropagate(output[j], learningRate)
+		}
+		log.Println("LOSS: ", loss)
+	}
 
+	for i := 0; i < len(input); i++ {
+		log.Println("PREDICT: ", predict(input[i]))
+		log.Println("ACTUAL: ", output[i])
+		log.Println("================\n\n")
+	}
+}
 
-	// for i := 1; i < len(nNodes) - 1; i++ {
-	// 	// activations[i] = make([]float64, layers[i])
-	// 	for j := 0; j < nNodes[i];j ++ {
-	// 		sum := 0
-	// 		for k := 0; k < nNodes[i-1]; k++ {
-	// 			sum = sum + weights[i-1]
-	// 		}
-	// 		activations[i] = sum
-	// 	}
-	// }
+func predict(input []float64) []float64 {
+	return feedForwards(input)
+}
+
+func backPropagate(output []float64, learningRate float64) float64 {
+	var loss float64
+
+	return loss
+}
+
+func feedForwards(input []float64) []float64 {
+	for k := 1; k <= nNodes[0]-1; k++ {
+		activations[0][k] = input[k-1]
+	}
+
+	// Calculate activations
+	for k := 1; k < len(nNodes); k++ {
+		for l := 1; l < nNodes[k]; l++ {
+			a := float64(0)
+			for m := 0; m < nNodes[k-1]; m++ {
+				a = a + weights[k-1][m][l-1]*activations[k-1][m]
+			}
+			activations[k][l] = sigmoid(a)
+		}
+	}
+
+	// Calculate activations output
+	for k := 0; k < nNodes[len(nNodes)-1]; k++ {
+		a := float64(0)
+		for l := 0; l < nNodes[len(nNodes)-2]; l++ {
+			a = a + weights[len(nNodes)-2][l][k]*activations[len(nNodes)-2][l]
+		}
+		activations[len(nNodes)-1][k] = sigmoid(a)
+
+	}
+
+	// log.Println("Activations: ", activations)
+	return activations[len(nNodes)-1]
 }
 
 func vector(I int, fill float64) []float64 {
@@ -134,4 +174,12 @@ func vector(I int, fill float64) []float64 {
 
 func randFloats(min, max float64) float64 {
 	return min + rand.Float64()*(max-min)
+}
+
+func sigmoid(x float64) float64 {
+	return 1 / (1 + math.Pow(math.E, -x))
+}
+
+func sigmoidDerivative(x float64) float64 {
+	return x * (1 - x)
 }
