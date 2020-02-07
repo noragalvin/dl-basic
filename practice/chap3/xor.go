@@ -8,12 +8,13 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"time"
 )
 
 var nNodes []int
 var activations [][]float64
 var weights [][][]float64
+var changes [][][]float64
+var mFactor float64
 
 func main() {
 	csvfile, err := os.Open("xor.csv")
@@ -58,10 +59,11 @@ func main() {
 	log.Println("Output: ", output)
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{4}
+	hiddenLayers := []int{8, 8}
 	numOfIteration := 10000
 
-	learningRate := 0.1
+	learningRate := 0.2
+	mFactor = 0.4
 	log.Println("Learning Rate: ", learningRate)
 	for i := 0; i < len(hiddenLayers); i++ {
 		layers = append(layers, hiddenLayers[i])
@@ -81,6 +83,7 @@ func main() {
 
 	// Init matrix
 	weights = make([][][]float64, len(nNodes)-1)
+	changes = make([][][]float64, len(nNodes)-1)
 
 	for i := 0; i < len(weights); i++ {
 		weights[i] = make([][]float64, nNodes[i])
@@ -89,8 +92,15 @@ func main() {
 		}
 	}
 
+	for i := 0; i < len(changes); i++ {
+		changes[i] = make([][]float64, nNodes[i])
+		for j := 0; j < len(changes[i]); j++ {
+			changes[i][j] = make([]float64, nNodes[i+1])
+		}
+	}
+
 	// init random weights
-	rand.Seed(time.Now().UnixNano())
+	rand.Seed(0)
 	for i := 0; i < len(nNodes)-1; i++ {
 		for j := 0; j < nNodes[i]; j++ {
 			for k := 0; k < nNodes[i+1]; k++ {
@@ -98,8 +108,6 @@ func main() {
 			}
 		}
 	}
-
-	log.Println(weights)
 
 	for i := 0; i < len(nNodes); i++ {
 		activations = append(activations, vector(nNodes[i], 1.0))
@@ -118,9 +126,7 @@ func main() {
 	}
 
 	for i := 0; i < len(input); i++ {
-		log.Println("PREDICT: ", predict(input[i]))
-		log.Println("ACTUAL: ", output[i])
-		log.Println("================\n\n")
+		log.Printf("PREDICT: %f. ACTUAL: %f\n", predict(input[i]), output[i])
 	}
 }
 
@@ -128,25 +134,19 @@ func predict(input []float64) []float64 {
 	return feedForwards(input)
 }
 
-func backPropagate(output []float64, learningRate float64) float64 {
-	var loss float64
-
-	return loss
-}
-
 func feedForwards(input []float64) []float64 {
-	for k := 1; k <= nNodes[0]-1; k++ {
+	for k := 1; k < nNodes[0]; k++ {
 		activations[0][k] = input[k-1]
 	}
 
 	// Calculate activations
-	for k := 1; k < len(nNodes); k++ {
+	for k := 1; k < len(nNodes)-1; k++ {
 		for l := 1; l < nNodes[k]; l++ {
 			a := float64(0)
 			for m := 0; m < nNodes[k-1]; m++ {
-				a = a + weights[k-1][m][l-1]*activations[k-1][m]
+				a = a + weights[k-1][m][l]*activations[k-1][m]
 			}
-			activations[k][l] = sigmoid(a)
+			activations[k][l] = relu(a)
 		}
 	}
 
@@ -160,10 +160,47 @@ func feedForwards(input []float64) []float64 {
 
 	}
 
-	// log.Println("Activations: ", activations)
 	return activations[len(nNodes)-1]
 }
 
+func backPropagate(output []float64, learningRate float64) float64 {
+	NLayers := len(nNodes)
+
+	deltas := make([][]float64, NLayers-1)
+	deltas[NLayers-2] = vector(nNodes[NLayers-1], 0.0)
+	for i := 0; i < nNodes[NLayers-1]; i++ {
+		deltas[NLayers-2][i] = sigmoidDerivative(activations[NLayers-1][i]) * (output[i] - activations[NLayers-1][i])
+	}
+
+	for k := len(deltas) - 2; k >= 0; k-- {
+		deltas[k] = vector(nNodes[k+1], 0.0)
+		for i := 0; i < nNodes[k+1]; i++ {
+			var e float64
+
+			for j := 0; j < nNodes[k+2]-1; j++ {
+				e += deltas[k+1][j] * weights[k+1][i][j]
+			}
+
+			deltas[k][i] = sigmoidDerivative(activations[k+1][i]) * e
+			// deltas[k][i] = drelu(activations[k+1][i]) * e
+		}
+	}
+
+	for k := NLayers - 2; k >= 0; k-- {
+		for i := 0; i < nNodes[k]; i++ {
+			for j := 0; j < nNodes[k+1]; j++ {
+				change := deltas[k][j] * activations[k][i]
+				weights[k][i][j] = weights[k][i][j] + learningRate*change + mFactor*changes[k][i][j]
+				changes[k][i][j] = change
+			}
+		}
+	}
+	var err float64
+	for i := 0; i < len(output); i++ {
+		err += 0.5 * math.Pow(output[i]-activations[NLayers-1][i], 2)
+	}
+	return err
+}
 func vector(I int, fill float64) []float64 {
 	v := make([]float64, I)
 	for i := 0; i < I; i++ {
@@ -182,4 +219,18 @@ func sigmoid(x float64) float64 {
 
 func sigmoidDerivative(x float64) float64 {
 	return x * (1 - x)
+}
+
+func relu(x float64) float64 {
+	if x < 0 {
+		return 0
+	}
+	return x
+}
+
+func drelu(y float64) float64 {
+	if y > 0 {
+		return 1
+	}
+	return 0
 }
