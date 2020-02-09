@@ -1,13 +1,18 @@
 package main
 
 import (
-	"encoding/csv"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"image"
+	_ "image/jpeg"
 	"io"
 	"log"
 	"math"
 	"math/rand"
 	"os"
-	"strconv"
+	"path/filepath"
+	"time"
 )
 
 var nNodes []int
@@ -15,66 +20,87 @@ var activations [][]float64
 var weights [][][]float64
 var changes [][][]float64
 var mFactor float64
+var numOfIteration int
+var learningRate float64
+var timeExcute float64
+
+type NeutralNetwork struct {
+	NNodes         []int         `json:"nNodes"`
+	Activations    [][]float64   `json:"activations"`
+	Weights        [][][]float64 `json:"weights"`
+	Changes        [][][]float64 `json:"changes"`
+	MFactor        float64       `json:"mfactor"`
+	NumOfIteration int           `json:"numOfIteration"`
+	LearningRate   float64       `json:"learningRate"`
+	TimeExcute     float64       `json:"timeExcute"`
+}
 
 func main() {
-	csvfile, err := os.Open("iris.csv")
-	if err != nil {
-		log.Fatalln("Couldn't open the csv file", err)
+
+	args := os.Args
+	if len(args) > 1 {
+
+		if args[1] == "predict" {
+			nn, err := load("model.json")
+
+			nNodes = nn.NNodes
+			activations = nn.Activations
+			weights = nn.Weights
+
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			if len(args) > 2 {
+				fileName := args[2]
+				filePath := "testing/" + fileName
+				input := dataFromFile(filePath)
+
+				result := predict(input)
+				predictValue := findMax(result)
+				fmt.Printf("\n====================\n")
+				fmt.Println("FILE: ", filePath)
+				fmt.Printf("PREDICT: %d.\n", predictValue)
+				fmt.Printf("====================\n")
+				return
+			}
+
+			predictTraining()
+
+			return
+		}
 	}
 
-	// Parse the file
-	r := csv.NewReader(csvfile)
+	input, output := traningData()
 
-	var input [][]float64
-	var output [][]float64
-	// Number of records
-	var N int
-
-	// Loop over first line
-	r.Read()
-	// Iterate through the records
-	for {
-		// Read each record from csv
-		record, err := r.Read()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatal(err)
-		}
-		var a, b, c, d, e float64
-		a, _ = strconv.ParseFloat(record[0], 64)
-		b, _ = strconv.ParseFloat(record[1], 64)
-		c, _ = strconv.ParseFloat(record[2], 64)
-		d, _ = strconv.ParseFloat(record[3], 64)
-		e, _ = strconv.ParseFloat(record[4], 64)
-
-		xi := []float64{a, b, c, d}
-
-		input = append(input, xi)
-
-		if e == 0 {
-			output = append(output, []float64{1, 0, 0})
-		}
-		if e == 1 {
-			output = append(output, []float64{0, 1, 0})
-		}
-		if e == 2 {
-			output = append(output, []float64{0, 0, 1})
-		}
-		N++
-	}
-
-	log.Println("Input: ", input)
-	log.Println("Output: ", output)
+	log.Println("Input: ", len(input))
+	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{4}
-	numOfIteration := 5000
+	hiddenLayers := []int{15}
+	numOfIteration = 10000
+	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate := 0.0003
+	learningRate = 0.01
 	mFactor = 0.1
 	log.Println("Learning Rate: ", learningRate)
+
+	initNetwork(hiddenLayers, layers, output)
+
+	start := time.Now()
+
+	train(numOfIteration, input, output, learningRate)
+
+	elapsed := time.Since(start)
+	timeExcute = elapsed.Seconds()
+	log.Printf("Training took %s", elapsed)
+
+	save("model.json")
+
+}
+
+func initNetwork(hiddenLayers []int, layers []int, output [][]float64) {
 	for i := 0; i < len(hiddenLayers); i++ {
 		layers = append(layers, hiddenLayers[i])
 	}
@@ -119,12 +145,12 @@ func main() {
 		}
 	}
 
-	log.Println("random weights:", weights)
-
 	for i := 0; i < len(nNodes); i++ {
 		activations = append(activations, vector(nNodes[i], 1.0))
 	}
+}
 
+func train(numOfIteration int, input [][]float64, output [][]float64, learningRate float64) {
 	for i := 0; i < numOfIteration; i++ {
 		loss := float64(0)
 		for j := 0; j < len(input); j++ {
@@ -138,10 +164,63 @@ func main() {
 			log.Println("LOSS: ", loss)
 		}
 	}
+}
 
-	for i := 0; i < len(input); i++ {
-		log.Printf("PREDICT: %f. ACTUAL: %f\n", predict(input[i]), output[i])
+func traningData() ([][]float64, [][]float64) {
+	inputData := [][]float64{}
+	outputData := [][]float64{}
+
+	for i := 0; i < 10; i++ {
+		var files []string
+
+		root := fmt.Sprintf("training/%d", i)
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			files = append(files, path)
+			return nil
+		})
+		if err != nil {
+			panic(err)
+		}
+		files = files[1:]
+
+		// Get output data
+		output := []float64{}
+		for j := 0; j < 10; j++ {
+			if j == i {
+				output = append(output, 1)
+			} else {
+				output = append(output, 0)
+			}
+		}
+
+		// Get input data
+		for _, file := range files {
+			input := []float64{}
+
+			f0, err := os.Open(fmt.Sprintf("%s", file))
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer f0.Close()
+			img0, _, err := image.Decode(f0)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for u := 0; u < 28; u++ {
+				for v := 0; v < 28; v++ {
+					r, _, _, _ := img0.At(u, v).RGBA()
+
+					input = append(input, float64(r/257/255))
+				}
+			}
+
+			inputData = append(inputData, input)
+			outputData = append(outputData, output)
+		}
 	}
+
+	return inputData, outputData
 }
 
 func predict(input []float64) []float64 {
@@ -182,7 +261,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 	deltas := make([][]float64, NLayers-1)
 	deltas[NLayers-2] = vector(nNodes[NLayers-1], 0.0)
 	for i := 0; i < nNodes[NLayers-1]; i++ {
-		deltas[NLayers-2][i] = sigmoidDerivative(activations[NLayers-1][i]) * (output[i] - activations[NLayers-1][i])
+		deltas[NLayers-2][i] = sigmoidDerivative(activations[NLayers-1][i]) * (activations[NLayers-1][i] - output[i])
 	}
 
 	for k := len(deltas) - 2; k >= 0; k-- {
@@ -195,7 +274,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 			}
 
 			// deltas[k][i] = sigmoidDerivative(activations[k+1][i]) * e
-			deltas[k][i] = drelu(activations[k+1][i]) * e
+			deltas[k][i] = reluDerivative(activations[k+1][i]) * e
 		}
 	}
 
@@ -203,7 +282,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 		for i := 0; i < nNodes[k]; i++ {
 			for j := 0; j < nNodes[k+1]; j++ {
 				change := deltas[k][j] * activations[k][i]
-				weights[k][i][j] = weights[k][i][j] + learningRate*change + mFactor*changes[k][i][j]
+				weights[k][i][j] = weights[k][i][j] - learningRate*change - mFactor*changes[k][i][j]
 				changes[k][i][j] = change
 			}
 		}
@@ -214,6 +293,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 	}
 	return err
 }
+
 func vector(I int, fill float64) []float64 {
 	v := make([]float64, I)
 	for i := 0; i < I; i++ {
@@ -241,9 +321,166 @@ func relu(x float64) float64 {
 	return x
 }
 
-func drelu(y float64) float64 {
+func reluDerivative(y float64) float64 {
 	if y > 0 {
 		return 1
 	}
 	return 0
+}
+
+func marshal(v interface{}) (io.Reader, error) {
+	b, err := json.MarshalIndent(v, "", "\t")
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(b), nil
+}
+
+func unmarshal(r io.Reader, v interface{}) error {
+	return json.NewDecoder(r).Decode(v)
+}
+
+// save neural network to file
+func save(path string) error {
+	data := make(map[string]interface{})
+
+	data["nNodes"] = nNodes
+	data["activations"] = activations
+	data["weights"] = weights
+	data["mFactor"] = mFactor
+	data["numberOfIteration"] = numOfIteration
+	data["learningRate"] = learningRate
+	data["timeExcute"] = timeExcute
+
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	r, err := marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(f, r)
+	return err
+}
+
+// load neural network from file
+func load(path string) (NeutralNetwork, error) {
+	nn := NeutralNetwork{}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return nn, err
+	}
+	defer f.Close()
+	err = unmarshal(f, &nn)
+	return nn, err
+}
+
+func findMax(arr []float64) int {
+	max := arr[0]
+	index := 0
+	for i := 0; i < len(arr); i++ {
+		if arr[i] > max {
+			max = arr[i]
+			index = i
+		}
+	}
+	return index
+}
+
+func calcPerCent(result []int) float64 {
+	n := len(result)
+
+	n1 := 0
+
+	for _, number := range result {
+		if number == 1 {
+			n1++
+		}
+	}
+
+	return float64(n1) / float64(n) * 100
+}
+
+func predictTraining() {
+
+	output := []int{}
+
+	for i := 0; i < 10; i++ {
+		var files []string
+
+		root := fmt.Sprintf("training/%d", i)
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			files = append(files, path)
+			return nil
+		})
+		files = files[1:]
+		if err != nil {
+			panic(err)
+		}
+
+		for _, file := range files {
+			input := []float64{}
+
+			f0, err := os.Open(fmt.Sprintf("%s", file))
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer f0.Close()
+			img0, _, err := image.Decode(f0)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for u := 0; u < 28; u++ {
+				for v := 0; v < 28; v++ {
+					r, _, _, _ := img0.At(u, v).RGBA()
+
+					input = append(input, float64(r/257/255))
+				}
+			}
+
+			result := predict(input)
+
+			predictValue := findMax(result)
+			fmt.Printf("\n====================\n")
+			fmt.Println("FILE: ", file)
+			fmt.Printf("PREDICT: %d. ACTUALLY: %d\n", predictValue, i)
+			fmt.Printf("====================\n")
+			if predictValue == i {
+				output = append(output, 1)
+			} else {
+				output = append(output, 0)
+			}
+		}
+	}
+
+	fmt.Printf("\n\nResult: %.2f%%\n", calcPerCent(output))
+}
+
+func dataFromFile(fileName string) []float64 {
+	// Get input data
+	input := []float64{}
+
+	f0, err := os.Open(fileName)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f0.Close()
+	img0, _, err := image.Decode(f0)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	for u := 0; u < 28; u++ {
+		for v := 0; v < 28; v++ {
+			r, _, _, _ := img0.At(u, v).RGBA()
+
+			input = append(input, float64(r/257/255))
+		}
+	}
+
+	return input
 }
