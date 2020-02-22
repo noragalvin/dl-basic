@@ -78,12 +78,12 @@ func main() {
 	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{100}
+	hiddenLayers := []int{50}
 	numOfIteration = 10000
 	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate = 0.6
-	mFactor = 0.4
+	learningRate = 0.2
+	mFactor = 0.15
 	log.Println("Learning Rate: ", learningRate)
 
 	initNetwork(hiddenLayers, layers, output)
