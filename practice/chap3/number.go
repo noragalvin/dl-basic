@@ -41,7 +41,7 @@ func main() {
 	if len(args) > 1 {
 
 		if args[1] == "predict" {
-			nn, err := load("model.json")
+			nn, err := load("model1.json")
 
 			nNodes = nn.NNodes
 			activations = nn.Activations
@@ -78,12 +78,12 @@ func main() {
 	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{15}
+	hiddenLayers := []int{100}
 	numOfIteration = 10000
 	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate = 0.01
-	mFactor = 0.1
+	learningRate = 0.6
+	mFactor = 0.4
 	log.Println("Learning Rate: ", learningRate)
 
 	initNetwork(hiddenLayers, layers, output)
@@ -96,7 +96,7 @@ func main() {
 	timeExcute = elapsed.Seconds()
 	log.Printf("Training took %s", elapsed)
 
-	save("model.json")
+	save("model1.json")
 
 }
 
