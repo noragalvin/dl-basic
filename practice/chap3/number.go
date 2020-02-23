@@ -41,7 +41,7 @@ func main() {
 	if len(args) > 1 {
 
 		if args[1] == "predict" {
-			nn, err := load("model1.json")
+			nn, err := load("model-80.json")
 
 			nNodes = nn.NNodes
 			activations = nn.Activations
@@ -53,6 +53,10 @@ func main() {
 			}
 
 			if len(args) > 2 {
+				if args[2] == "testing" {
+					predictTesting()
+					return
+				}
 				fileName := args[2]
 				filePath := "testing/" + fileName
 				input := dataFromFile(filePath)
@@ -412,6 +416,62 @@ func predictTraining() {
 		var files []string
 
 		root := fmt.Sprintf("training/%d", i)
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			files = append(files, path)
+			return nil
+		})
+		files = files[1:]
+		if err != nil {
+			panic(err)
+		}
+
+		for _, file := range files {
+			input := []float64{}
+
+			f0, err := os.Open(fmt.Sprintf("%s", file))
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer f0.Close()
+			img0, _, err := image.Decode(f0)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for u := 0; u < 28; u++ {
+				for v := 0; v < 28; v++ {
+					r, _, _, _ := img0.At(u, v).RGBA()
+
+					input = append(input, float64(r/257/255))
+				}
+			}
+
+			result := predict(input)
+
+			predictValue := findMax(result)
+			fmt.Printf("\n====================\n")
+			fmt.Println("FILE: ", file)
+			fmt.Printf("PREDICT: %d. ACTUALLY: %d\n", predictValue, i)
+			fmt.Printf("====================\n")
+			if predictValue == i {
+				output = append(output, 1)
+			} else {
+				output = append(output, 0)
+			}
+		}
+	}
+
+	fmt.Printf("\n\nResult: %.2f%%\n", calcPerCent(output))
+}
+
+func predictTesting() {
+
+	output := []int{}
+
+	for i := 0; i < 10; i++ {
+		var files []string
+
+		root := fmt.Sprintf("testingwithlabel/%d", i)
 		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			files = append(files, path)
 			return nil
