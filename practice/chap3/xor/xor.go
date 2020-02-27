@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -109,6 +110,8 @@ func main() {
 		}
 	}
 
+	fmt.Println(weights)
+
 	for i := 0; i < len(nNodes); i++ {
 		activations = append(activations, vector(nNodes[i], 1.0))
 	}
@@ -122,7 +125,7 @@ func main() {
 			// Back propagate
 			loss += backPropagate(output[j], learningRate)
 		}
-		log.Println("LOSS: ", loss)
+		// log.Println("LOSS: ", loss)
 	}
 
 	for i := 0; i < len(input); i++ {
