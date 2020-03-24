@@ -286,7 +286,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 		for i := 0; i < nNodes[k]; i++ {
 			for j := 0; j < nNodes[k+1]; j++ {
 				change := deltas[k][j] * activations[k][i]
-				weights[k][i][j] = weights[k][i][j] - learningRate*change - mFactor*changes[k][i][j]
+				weights[k][i][j] = weights[k][i][j] - learningRate*(change + mFactor*changes[k][i][j])
 				changes[k][i][j] = change
 			}
 		}
