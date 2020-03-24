@@ -82,13 +82,14 @@ func main() {
 	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{50}
-	numOfIteration = 10000
+	hiddenLayers := []int{50, 100}
+	numOfIteration = 15000
 	log.Println("Num of iteration: ", numOfIteration)
 
 	learningRate = 0.2
-	mFactor = 0.15
+	mFactor = 0.9
 	log.Println("Learning Rate: ", learningRate)
+	log.Println("Momentum: ", mFactor)
 
 	initNetwork(hiddenLayers, layers, output)
 
@@ -100,7 +101,7 @@ func main() {
 	timeExcute = elapsed.Seconds()
 	log.Printf("Training took %s", elapsed)
 
-	save("model1.json")
+	save("model-new.json")
 
 }
 
@@ -286,7 +287,7 @@ func backPropagate(output []float64, learningRate float64) float64 {
 		for i := 0; i < nNodes[k]; i++ {
 			for j := 0; j < nNodes[k+1]; j++ {
 				change := deltas[k][j] * activations[k][i]
-				weights[k][i][j] = weights[k][i][j] - learningRate*(change + mFactor*changes[k][i][j])
+				weights[k][i][j] = weights[k][i][j] - learningRate*(change+mFactor*(1-mFactor)*changes[k][i][j])
 				changes[k][i][j] = change
 			}
 		}
