@@ -41,7 +41,7 @@ func main() {
 	if len(args) > 1 {
 
 		if args[1] == "predict" {
-			nn, err := load("model-80.json")
+			nn, err := load("model-new.json")
 
 			nNodes = nn.NNodes
 			activations = nn.Activations
@@ -82,11 +82,11 @@ func main() {
 	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{50, 100}
+	hiddenLayers := []int{75, 50}
 	numOfIteration = 15000
 	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate = 0.2
+	learningRate = 0.075
 	mFactor = 0.9
 	log.Println("Learning Rate: ", learningRate)
 	log.Println("Momentum: ", mFactor)
