@@ -82,11 +82,11 @@ func main() {
 	log.Println("Output: ", len(output))
 
 	layers := []int{len(input[0])}
-	hiddenLayers := []int{75, 50}
-	numOfIteration = 15000
+	hiddenLayers := []int{50}
+	numOfIteration = 10000
 	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate = 0.075
+	learningRate = 0.03
 	mFactor = 0.9
 	log.Println("Learning Rate: ", learningRate)
 	log.Println("Momentum: ", mFactor)
@@ -166,8 +166,12 @@ func train(numOfIteration int, input [][]float64, output [][]float64, learningRa
 			loss += backPropagate(output[j], learningRate)
 		}
 		if i%1000 == 0 {
-			log.Println("LOSS: ", loss)
+			log.Printf("Epoch: %d  LOSS: %f", i+1, loss)
+			earlyStoppingTraining()
+			earlyStoppingTesting()
 		}
+		// if i%10 == 0 {
+		// }
 	}
 }
 
@@ -283,19 +287,44 @@ func backPropagate(output []float64, learningRate float64) float64 {
 		}
 	}
 
+	// weightsDecay := float64(0)
+	// numOfWeights := float64(0)
+
+	// for k := NLayers - 2; k >= 0; k-- {
+	// 	for i := 0; i < nNodes[k]; i++ {
+	// 		for j := 0; j < nNodes[k+1]; j++ {
+	// 			numOfWeights++
+	// 			// weightsDecay = weightsDecay + math.Pow(weights[k][i][j], 2)
+	// 		}
+	// 	}
+	// }
+
+	// weightsDecay = math.Sqrt(weightsDecay)
+
+	// log.Println(weightsDecay)
+	// log.Println((0.1 / numOfWeights) * weightsDecay)
+
 	for k := NLayers - 2; k >= 0; k-- {
 		for i := 0; i < nNodes[k]; i++ {
 			for j := 0; j < nNodes[k+1]; j++ {
-				change := deltas[k][j] * activations[k][i]
-				weights[k][i][j] = weights[k][i][j] - learningRate*(change+mFactor*(1-mFactor)*changes[k][i][j])
+				change := deltas[k][j]*activations[k][i] + 0.01*weights[k][i][j]
+				if j == nNodes[k+1]-1 {
+					change = deltas[k][j] * activations[k][i]
+				}
+				m := (1-mFactor)*change + mFactor*changes[k][i][j]
+
+				weights[k][i][j] = weights[k][i][j] - learningRate*m
+				// weights[k][i][j] = weights[k][i][j] - learningRate*change
 				changes[k][i][j] = change
 			}
 		}
 	}
 	var err float64
 	for i := 0; i < len(output); i++ {
+
 		err += 0.5 * math.Pow(output[i]-activations[NLayers-1][i], 2)
 	}
+
 	return err
 }
 
@@ -519,6 +548,118 @@ func predictTesting() {
 	}
 
 	fmt.Printf("\n\nResult: %.2f%%\n", calcPerCent(output))
+}
+
+func earlyStoppingTraining() {
+
+	output := []int{}
+
+	for i := 0; i < 10; i++ {
+		var files []string
+
+		root := fmt.Sprintf("training/%d", i)
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			files = append(files, path)
+			return nil
+		})
+		files = files[1:]
+		if err != nil {
+			panic(err)
+		}
+
+		for _, file := range files {
+			input := []float64{}
+
+			f0, err := os.Open(fmt.Sprintf("%s", file))
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer f0.Close()
+			img0, _, err := image.Decode(f0)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for u := 0; u < 28; u++ {
+				for v := 0; v < 28; v++ {
+					r, _, _, _ := img0.At(u, v).RGBA()
+
+					input = append(input, float64(r/257/255))
+				}
+			}
+
+			result := predict(input)
+
+			predictValue := findMax(result)
+			// fmt.Printf("\n====================\n")
+			// fmt.Println("FILE: ", file)
+			// fmt.Printf("PREDICT: %d. ACTUALLY: %d\n", predictValue, i)
+			// fmt.Printf("====================\n")
+			if predictValue == i {
+				output = append(output, 1)
+			} else {
+				output = append(output, 0)
+			}
+		}
+	}
+
+	fmt.Printf("Result Training: %.2f%%\n", calcPerCent(output))
+}
+
+func earlyStoppingTesting() {
+
+	output := []int{}
+
+	for i := 0; i < 10; i++ {
+		var files []string
+
+		root := fmt.Sprintf("testingwithlabel/%d", i)
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			files = append(files, path)
+			return nil
+		})
+		files = files[1:]
+		if err != nil {
+			panic(err)
+		}
+
+		for _, file := range files {
+			input := []float64{}
+
+			f0, err := os.Open(fmt.Sprintf("%s", file))
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer f0.Close()
+			img0, _, err := image.Decode(f0)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			for u := 0; u < 28; u++ {
+				for v := 0; v < 28; v++ {
+					r, _, _, _ := img0.At(u, v).RGBA()
+
+					input = append(input, float64(r/257/255))
+				}
+			}
+
+			result := predict(input)
+
+			predictValue := findMax(result)
+			// fmt.Printf("\n====================\n")
+			// fmt.Println("FILE: ", file)
+			// fmt.Printf("PREDICT: %d. ACTUALLY: %d\n", predictValue, i)
+			// fmt.Printf("====================\n")
+			if predictValue == i {
+				output = append(output, 1)
+			} else {
+				output = append(output, 0)
+			}
+		}
+	}
+
+	fmt.Printf("Result Testing: %.2f%%\n", calcPerCent(output))
 }
 
 func dataFromFile(fileName string) []float64 {
