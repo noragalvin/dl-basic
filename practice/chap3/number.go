@@ -86,7 +86,7 @@ func main() {
 	numOfIteration = 10000
 	log.Println("Num of iteration: ", numOfIteration)
 
-	learningRate = 0.03
+	learningRate = 0.35
 	mFactor = 0.9
 	log.Println("Learning Rate: ", learningRate)
 	log.Println("Momentum: ", mFactor)
@@ -165,11 +165,11 @@ func train(numOfIteration int, input [][]float64, output [][]float64, learningRa
 			// Back propagate
 			loss += backPropagate(output[j], learningRate)
 		}
-		if i%1000 == 0 {
-			log.Printf("Epoch: %d  LOSS: %f", i+1, loss)
-			earlyStoppingTraining()
-			earlyStoppingTesting()
-		}
+		// if i%1000 == 0 {
+		log.Printf("Epoch: %d  LOSS: %f", i+1, loss)
+		// earlyStoppingTraining()
+		// earlyStoppingTesting()
+		// }
 		// if i%10 == 0 {
 		// }
 	}
@@ -287,28 +287,11 @@ func backPropagate(output []float64, learningRate float64) float64 {
 		}
 	}
 
-	// weightsDecay := float64(0)
-	// numOfWeights := float64(0)
-
-	// for k := NLayers - 2; k >= 0; k-- {
-	// 	for i := 0; i < nNodes[k]; i++ {
-	// 		for j := 0; j < nNodes[k+1]; j++ {
-	// 			numOfWeights++
-	// 			// weightsDecay = weightsDecay + math.Pow(weights[k][i][j], 2)
-	// 		}
-	// 	}
-	// }
-
-	// weightsDecay = math.Sqrt(weightsDecay)
-
-	// log.Println(weightsDecay)
-	// log.Println((0.1 / numOfWeights) * weightsDecay)
-
 	for k := NLayers - 2; k >= 0; k-- {
 		for i := 0; i < nNodes[k]; i++ {
 			for j := 0; j < nNodes[k+1]; j++ {
-				change := deltas[k][j]*activations[k][i] + 0.01*weights[k][i][j]
-				if j == nNodes[k+1]-1 {
+				change := deltas[k][j] * activations[k][i]
+				if i == nNodes[k]-1 {
 					change = deltas[k][j] * activations[k][i]
 				}
 				m := (1-mFactor)*change + mFactor*changes[k][i][j]
@@ -337,6 +320,11 @@ func vector(I int, fill float64) []float64 {
 }
 
 func randFloats(min, max float64) float64 {
+	if min > max {
+		temp := min
+		min = max
+		max = temp
+	}
 	return min + rand.Float64()*(max-min)
 }
 
