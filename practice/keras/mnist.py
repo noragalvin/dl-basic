@@ -6,7 +6,7 @@ from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras.utils import np_utils
 from keras.datasets import mnist
-
+from keras.models import model_from_json
 
 # Load dữ liệu từ MNIST dataset, bao gồm 60.000 training set và 10.000 test set. Sau đó chia bộ traning set thành 2: 50.000 cho training set và 10.000 dữ liệu cho validation set.
 # 2. Load dữ liệu MNIST
@@ -69,26 +69,25 @@ model.compile(loss='categorical_crossentropy',
 H = model.fit(X_train, Y_train, validation_data=(X_val, Y_val),
           batch_size=32, epochs=10, verbose=1)
 
-# 8. Vẽ đồ thị loss, accuracy của traning set và validation set
-fig = plt.figure()
-numOfEpoch = 10
-
-print(H.history.keys())
-plt.plot(np.arange(0, numOfEpoch), H.history['loss'], label='training loss')
-plt.plot(np.arange(0, numOfEpoch), H.history['val_loss'], label='validation loss')
-plt.plot(np.arange(0, numOfEpoch), H.history['accuracy'], label='accuracy')
-plt.plot(np.arange(0, numOfEpoch), H.history['val_accuracy'], label='validation accuracy')
-plt.title('Accuracy and Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss|Accuracy')
-plt.legend()
-
 # 9. Đánh giá model với dữ liệu test set
 score = model.evaluate(X_test, Y_test, verbose=0)
 print(score)
 
-# 10. Dự đoán ảnh
-plt.imshow(X_test[0].reshape(28,28), cmap='gray')
+serialize model to JSON
+model_json = model.to_json()
+with open("model.json", "w") as json_file:
+    json_file.write(model_json)
+print("Saved model to disk")
+ 
+# later...
+ 
+# load json and create model
+# json_file = open('model.json', 'r')
+# loaded_model_json = json_file.read()
+# json_file.close()
+# loaded_model = model_from_json(loaded_model_json)
 
-y_predict = model.predict(X_test[0].reshape(1,28,28,1))
+# 10. Dự đoán ảnh
+
+y_predict = loaded_model.predict(X_test[0].reshape(1,28,28,1))
 print('Gia tru du doan: ', np.argmax(y_predict))
