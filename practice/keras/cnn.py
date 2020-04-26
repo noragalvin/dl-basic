@@ -26,8 +26,6 @@ class MNIST_CNN:
       self.reshape_data()
       self.encoding_label()
       self.init_model()
-      self.fit()
-      self.save_model('model.json')
 
     def load_data(self):
       self.X_val, self.y_val = self.X_train[50000:60000,:], self.y_train[50000:60000]
@@ -48,11 +46,11 @@ class MNIST_CNN:
 
     def init_model(self):
       # Thêm Convolutional layer với 32 kernel, kích thước kernel 3*3
-      # dùng hàm sigmoid làm activation và chỉ rõ input_shape cho layer đầu tiên
-      self.model.add(Conv2D(32, (3, 3), activation='sigmoid', input_shape=(28,28,1)))
+      # dùng hàm relu làm activation và chỉ rõ input_shape cho layer đầu tiên
+      self.model.add(Conv2D(32, (3, 3), activation='relu', input_shape=(28,28,1)))
 
       # Thêm Convolutional layer
-      self.model.add(Conv2D(32, (3, 3), activation='sigmoid'))
+      self.model.add(Conv2D(32, (3, 3), activation='relu'))
 
       # Thêm Max pooling layer
       self.model.add(MaxPooling2D(pool_size=(2,2)))
@@ -60,8 +58,8 @@ class MNIST_CNN:
       # Flatten layer chuyển từ tensor sang vector
       self.model.add(Flatten())
 
-      # Thêm Fully Connected layer với 128 nodes và dùng hàm sigmoid
-      self.model.add(Dense(128, activation='sigmoid'))
+      # Thêm Fully Connected layer với 128 nodes và dùng hàm relu
+      self.model.add(Dense(128, activation='relu'))
 
       # Output layer với 10 node và dùng softmax function để chuyển sang xác xuất.
       self.model.add(Dense(10, activation='softmax'))
@@ -70,24 +68,21 @@ class MNIST_CNN:
       # đùng để tối ưu hàm loss function.
       self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
             
-    
-	# Tóm tắt mô hình neural network
+	  # Tóm tắt mô hình neural network
     def __repr__(self):
       return "Neural network [{}]".format("-".join(str(l) for l in self.layers))
       
     def fit(self, batch_size=32, epochs=10, verbose=1):
       self.H = self.model.fit(self.X_train, self.Y_train, validation_data=(self.X_val, self.Y_val), batch_size=batch_size, epochs=epochs, verbose=verbose)
     
-    def load_model(self, file_name):
-      # load json and create model
-      json_file = open(file_name, 'r')
-      loaded_model_json = json_file.read()
-      json_file.close()
-      self.model = model_from_json(loaded_model_json)
-    
     def predict(self, X):
       y_predict = self.model.predict(X.reshape(1,28,28,1))
       print('Gia tru du doan: ', np.argmax(y_predict))
+
+    def evaluate(self, verbose):
+      # 9. Đánh giá model với dữ liệu test set
+      score = model.evaluate(self.X_test, self.Y_test, verbose=verbose)
+      print(score)
 
     def save_model(self, file_name):
       # serialize model to JSON
@@ -96,8 +91,18 @@ class MNIST_CNN:
           json_file.write(model_json)
       print("Saved model to disk")
 
+    def load_model(self, file_name):
+      # load json and create model
+      json_file = open(file_name, 'r')
+      loaded_model_json = json_file.read()
+      json_file.close()
+      self.model = model_from_json(loaded_model_json)
+
 
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
+p.fit()
+p.save_model('model.json')
+p.evaluate(0)
 p.predict(X_test[0])
