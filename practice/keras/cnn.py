@@ -81,7 +81,7 @@ class MNIST_CNN:
 
     def evaluate(self, verbose):
       # 9. Đánh giá model với dữ liệu test set
-      score = model.evaluate(self.X_test, self.Y_test, verbose=verbose)
+      score = self.model.evaluate(self.X_test, self.Y_test, verbose=verbose)
       print(score)
 
     def save_model(self, file_name):
