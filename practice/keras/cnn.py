@@ -88,7 +88,10 @@ class MNIST_CNN:
       # serialize model to JSON
       model_json = self.model.to_json()
       with open(file_name, "w") as json_file:
-          json_file.write(model_json)
+        json_file.write(model_json)
+
+      # serialize weights to HDF5
+      self.model.save_weights("model.h5")
       print("Saved model to disk")
 
     def load_model(self, file_name):
@@ -97,12 +100,15 @@ class MNIST_CNN:
       loaded_model_json = json_file.read()
       json_file.close()
       self.model = model_from_json(loaded_model_json)
-
+      self.model.load_weights("model.h5")
+      print("Loaded model from disk")
 
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
-p.fit()
-p.save_model('model.json')
-p.evaluate(0)
+# p.fit()
+# p.save_model('model.json')
+# p.evaluate(0)
+p.load_model('model.json')
 p.predict(X_test[0])
+print(y_test[0])
