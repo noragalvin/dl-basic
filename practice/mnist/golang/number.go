@@ -41,7 +41,7 @@ func main() {
 	if len(args) > 1 {
 
 		if args[1] == "predict" {
-			nn, err := load("model-new.json")
+			nn, err := load("model-84.json")
 
 			nNodes = nn.NNodes
 			activations = nn.Activations
