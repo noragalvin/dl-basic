@@ -8,7 +8,6 @@ from keras.utils import np_utils
 from keras.datasets import mnist
 from keras.models import model_from_json
 
-
 # Lớp neural network
 class MNIST_CNN:
     def __init__(self, X_train, y_train, X_test, y_test):
