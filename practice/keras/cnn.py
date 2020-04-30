@@ -25,7 +25,6 @@ class MNIST_CNN:
       self.load_data()
       self.reshape_data()
       self.encoding_label()
-      self.init_model()
 
     def load_data(self):
       self.X_val, self.y_val = self.X_train[50000:60000,:], self.y_train[50000:60000]
@@ -63,11 +62,12 @@ class MNIST_CNN:
 
       # Output layer với 10 node và dùng softmax function để chuyển sang xác xuất.
       self.model.add(Dense(10, activation='softmax'))
-
+            
+    def compile_model(self):
       # 6. Compile model, chỉ rõ hàm loss_function nào được sử dụng, phương thức 
       # đùng để tối ưu hàm loss function.
       self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-            
+
 	  # Tóm tắt mô hình neural network
     def __repr__(self):
       return "Neural network [{}]".format("-".join(str(l) for l in self.layers))
@@ -106,9 +106,13 @@ class MNIST_CNN:
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
+# p.init_model()
+# p.compile_model()
 # p.fit()
 # p.save_model('model.json')
 # p.evaluate(0)
 p.load_model('model.json')
+p.compile_model()
+p.evaluate(0)
 p.predict(X_test[0])
 print(y_test[0])
