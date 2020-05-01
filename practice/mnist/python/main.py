@@ -1,4 +1,3 @@
-# Thêm thư viện
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
@@ -8,7 +7,6 @@ from keras.utils import np_utils
 from keras.datasets import mnist
 from keras.models import model_from_json
 
-# Lớp neural network
 class MNIST_CNN:
     def __init__(self, X_train, y_train, X_test, y_test):
       self.X_train = X_train
@@ -39,8 +37,8 @@ class MNIST_CNN:
       self.Y_train = np_utils.to_categorical(self.y_train, 10)
       self.Y_val = np_utils.to_categorical(self.y_val, 10)
       self.Y_test = np_utils.to_categorical(self.y_test, 10)
-      print('Du lieu y ban dau ', self.y_train[0])
-      print('Du lieu y sau one-hot encoding ', self.Y_train[0])
+      # print('Du lieu y ban dau ', self.y_train[0])
+      # print('Du lieu y sau one-hot encoding ', self.Y_train[0])
 
     def init_model(self):
       # Thêm Convolutional layer với 32 kernel, kích thước kernel 3*3
@@ -63,13 +61,9 @@ class MNIST_CNN:
       self.model.add(Dense(10, activation='softmax'))
             
     def compile_model(self):
-      # 6. Compile model, chỉ rõ hàm loss_function nào được sử dụng, phương thức 
+      # Compile model, chỉ rõ hàm loss_function nào được sử dụng, phương thức 
       # đùng để tối ưu hàm loss function.
       self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-	  # Tóm tắt mô hình neural network
-    def __repr__(self):
-      return "Neural network [{}]".format("-".join(str(l) for l in self.layers))
       
     def fit(self, batch_size=32, epochs=10, verbose=1):
       self.H = self.model.fit(self.X_train, self.Y_train, validation_data=(self.X_val, self.Y_val), batch_size=batch_size, epochs=epochs, verbose=verbose)
@@ -79,9 +73,9 @@ class MNIST_CNN:
       print('Gia tru du doan: ', np.argmax(y_predict))
 
     def evaluate(self, verbose):
-      # 9. Đánh giá model với dữ liệu test set
+      # Dánh giá model với dữ liệu test set
       score = self.model.evaluate(self.X_test, self.Y_test, verbose=verbose)
-      print(score)
+      print("Accuracy: ", score[1])
 
     def save_model(self, file_name):
       # serialize model to JSON
