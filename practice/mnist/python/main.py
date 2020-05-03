@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
@@ -14,7 +13,7 @@ class MNIST_CNN:
       self.X_test = X_test
       self.y_test = y_test
       self.Y_train = None
-      self.Y_val = None
+      self.Y_validation = None
       self.Y_test = None
 
       self.model = Sequential()
@@ -24,18 +23,18 @@ class MNIST_CNN:
       self.encoding_label()
 
     def load_data(self):
-      self.X_val, self.y_val = self.X_train[50000:60000,:], self.y_train[50000:60000]
+      self.X_validation, self.y_validation = self.X_train[50000:60000,:], self.y_train[50000:60000]
       self.X_train, self.y_train = self.X_train[:50000,:], self.y_train[:50000]
       print(self.X_train.shape)
 
     def reshape_data(self):
       self.X_train = self.X_train.reshape(self.X_train.shape[0], 28, 28, 1)
-      self.X_val = self.X_val.reshape(self.X_val.shape[0], 28, 28, 1)
+      self.X_validation = self.X_validation.reshape(self.X_validation.shape[0], 28, 28, 1)
       self.X_test = self.X_test.reshape(self.X_test.shape[0], 28, 28, 1)
     
     def encoding_label(self):
       self.Y_train = np_utils.to_categorical(self.y_train, 10)
-      self.Y_val = np_utils.to_categorical(self.y_val, 10)
+      self.Y_validation = np_utils.to_categorical(self.y_validation, 10)
       self.Y_test = np_utils.to_categorical(self.y_test, 10)
       # print('Du lieu y ban dau ', self.y_train[0])
       # print('Du lieu y sau one-hot encoding ', self.Y_train[0])
@@ -66,7 +65,7 @@ class MNIST_CNN:
       self.model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
       
     def fit(self, batch_size=32, epochs=10, verbose=1):
-      self.H = self.model.fit(self.X_train, self.Y_train, validation_data=(self.X_val, self.Y_val), batch_size=batch_size, epochs=epochs, verbose=verbose)
+      self.H = self.model.fit(self.X_train, self.Y_train, validation_data=(self.X_validation, self.Y_validation), batch_size=batch_size, epochs=epochs, verbose=verbose)
     
     def predict(self, X):
       y_predict = self.model.predict(X.reshape(1,28,28,1))
@@ -99,13 +98,14 @@ class MNIST_CNN:
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
-# p.init_model()
-# p.compile_model()
-# p.fit()
-# p.save_model('model.json')
-# p.evaluate(0)
-p.load_model('model.json')
+p.init_model()
 p.compile_model()
+p.fit()
+p.save_model('model.json')
 p.evaluate(0)
+
+# p.load_model('model.json')
+# p.compile_model()
+# p.evaluate(0)
 p.predict(X_test[0])
 print(y_test[0])
