@@ -74,7 +74,7 @@ class MNIST_CNN:
     def evaluate(self, verbose):
       # Dánh giá model với dữ liệu test set
       score = self.model.evaluate(self.X_test, self.Y_test, verbose=verbose)
-      print("Accuracy: ", score[1])
+      print("Accuracy: ", score[1]*100)
 
     def save_model(self, file_name):
       # serialize model to JSON
@@ -100,7 +100,7 @@ class MNIST_CNN:
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
 p.init_model()
 p.compile_model()
-p.fit()
+p.fit(32, 10, 1)
 p.save_model('model.json')
 p.evaluate(0)
 
@@ -108,4 +108,4 @@ p.evaluate(0)
 # p.compile_model()
 # p.evaluate(0)
 p.predict(X_test[0])
-print(y_test[0])
+print("Gia tri thuc te: ", y_test[0])
