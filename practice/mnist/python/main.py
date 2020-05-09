@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt 
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D
@@ -98,14 +99,24 @@ class MNIST_CNN:
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
-p.init_model()
-p.compile_model()
-p.fit(32, 10, 1)
-p.save_model('model.json')
-p.evaluate(0)
-
-# p.load_model('model.json')
+# p.init_model()
 # p.compile_model()
+# p.fit(32, 10, 1)
+# p.save_model('model.json')
 # p.evaluate(0)
-p.predict(X_test[0])
-print("Gia tri thuc te: ", y_test[0])
+
+p.load_model('model.json')
+p.compile_model()
+p.evaluate(0)
+# for index in range(len(X_test)):
+#   p.predict(X_test[index])
+#   print("Gia tri thuc te: ", y_test[index])
+
+p.predict(X_test[100])
+print("Gia tri thuc te: ", y_test[100])
+
+image = X_test[100]
+image = np.array(image, dtype='float')
+pixels = image.reshape((28, 28))
+plt.imshow(pixels, cmap='gray')
+plt.show()
