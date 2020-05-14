@@ -97,6 +97,7 @@ class MNIST_CNN:
       print("Loaded model from disk")
 
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
+print(X_test[0])
 
 p = MNIST_CNN(X_train, y_train, X_test, y_test)
 # p.init_model()
