@@ -49,6 +49,7 @@
     .image-area img {
       z-index: 2;
       position: relative;
+      width: 100%;
     }
 
     /*
@@ -99,7 +100,7 @@
         <div class="image-area mt-4">
           <img id="imageResult" src="#" alt="" class="img-fluid rounded shadow-sm mx-auto d-block">
         </div>
-
+        <p id="result" class="text-center mt-2"></p>
         <div class="d-flex mt-2">
           <button class="btn btn-primary mx-auto" id="detect">DETECT</button>
         </div>
@@ -174,6 +175,7 @@
         contentType: false,
         success: function (data) {
           console.log({ data: data });
+          $("#result").text(`Giá trị dự đoán: ${data.value}`)
         }
       });
     })
