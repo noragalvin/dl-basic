@@ -31,10 +31,11 @@
       border: 2px dashed rgba(255, 255, 255, 0.7);
       padding: 1rem;
       position: relative;
+      width: 200px;
     }
 
     .image-area::before {
-      content: 'Uploaded image result';
+      content: 'Image Box';
       color: #fff;
       font-weight: bold;
       text-transform: uppercase;
@@ -52,13 +53,6 @@
       width: 100%;
     }
 
-    /*
-*
-* ==========================================
-* FOR DEMO PURPOSES
-* ==========================================
-*
-*/
     body {
       min-height: 100vh;
       background-color: #757f9a;
@@ -70,6 +64,30 @@
         background: #000;
     }
     .draw-container .canvas-container{
+      margin: auto;
+    }
+
+    .loader {
+      display: none;
+      border: 8px solid #f3f3f3; /* Light grey */
+      border-top: 8px solid #3498db; /* Blue */
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #draw-container {
+      display: none;
+      /* opacity: 0; */
+    }
+    
+    #draw-container .canvas-container {
       margin: auto;
     }
   </style>
@@ -91,8 +109,12 @@
 
     <div class="row">
       <div class="col-8 offset-2">
+        <div class="button-group text-center">
+          <button class="btn btn-primary" id="upload-btn">Upload File Mode</button>
+          <button class="btn btn-secondary"  id="draw-btn">Draw Mode</button>
+        </div>
         <div class="row py-4">
-          <div class="col-12">
+          <div class="col-12" id="upload-container">
             <!-- Upload image input-->
             <div class="input-group mb-3 px-2 py-2 rounded-pill bg-white shadow-sm">
               <input id="upload" type="file" onchange="readURL(this);" class="form-control border-0">
@@ -106,13 +128,23 @@
     
             <!-- Uploaded image area-->
             <p class="font-italic text-white text-center">The image uploaded will be rendered inside the box below.</p>
-            <div class="image-area mt-4">
+            <div class="image-area m-auto mt-4">
               <img id="imageResult" src="#" alt="" class="img-fluid rounded shadow-sm mx-auto d-block">
             </div>
-            <canvas id="sheet" width="400" height="400"></canvas>
+            
+          </div>
+          <div class="col-12" id="draw-container">
+            <div class=" d-flex align-items-center justify-content-center flex-column">
+
+              <canvas id="sheet" width="200" height="200"></canvas>
+              <button class="btn btn-secondary btn-outline mt-2" id="clear-canvas">Clear</button>
+            </div>
           </div>
         </div>
-        <p id="result" class="text-center mt-2"></p>
+        <div class="d-flex align-items-center justify-content-center">
+          <p id="result" class="text-center mt-2"></p>
+          <div class="loader"></div>
+        </div>
         <div class="d-flex mt-2">
           <button class="btn btn-primary mx-auto" id="detect">DETECT</button>
         </div>
@@ -171,21 +203,22 @@
       var formData = new FormData();
 
       var currentTab = $(".nav-item.nav-link.active").attr("id");
-      if(currentTab == "upload-tab"){
-        var img = $('#upload').prop('files');
-        formData.append('file', img[0]);
-        sendRequest(formData)
-      } else {
+      // if(currentTab == "upload-tab"){
+      //   var img = $('#upload').prop('files');
+      //   formData.append('file', img[0]);
+      //   sendRequest(formData)
+      // } else {
         const canvas = document.getElementById('sheet');
         canvas.toBlob(function(blob) {
           formData.append('file', blob, 'canvas.png');
           sendRequest(formData)          
         });
-      }
+      // }
 
     })
 
     function sendRequest(formData) {
+      $(".loader").show();
       $.ajax({
         url: 'recognize',
         type: 'POST',
@@ -193,26 +226,46 @@
         processData: false,
         contentType: false,
         success: function (data) {
+          $(".loader").hide();
+          
           $("#result").text(`Giá trị dự đoán: ${data.value}`)
         }
       });
     }
 
-    $(".nav-link").click(function() {
-      if($(this).attr("id") == "draw-tab") {
-        var canvas = new fabric.Canvas('sheet');
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = 20;
-        canvas.freeDrawingBrush.color = "#fff";
-      }
+    var canvas = null;
+
+    var handleUpload = function() {
+      $("#upload-container").show();
+      $("#draw-container").hide()
+      // $("#draw-container").css("opacity", 0)
+    }
+
+    var handleDraw = function() {
+      $("#upload-container").hide();
+      $("#draw-container").show();
+      // $("#draw-container").css("opacity", 1);
+    }
+
+    $("#upload-btn").click(function() {
+      handleUpload()
+      $("#result").text(``);
     })
 
-    window.onload = function() {
-      var canvas = new fabric.Canvas('sheet');
+    $("#draw-btn").click(function() {
+      handleDraw();
+      $("#result").text(``);
+      canvas = new fabric.Canvas('sheet');
+      
       canvas.isDrawingMode = true;
       canvas.freeDrawingBrush.width = 20;
       canvas.freeDrawingBrush.color = "#fff";
-    }
+      
+    })
+
+    $("#clear-canvas").click(function() {
+      canvas.clear();
+    })
 
   </script>
 
