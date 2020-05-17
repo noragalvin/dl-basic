@@ -65,25 +65,15 @@
       background-image: linear-gradient(147deg, #757f9a 0%, #d7dde8 100%);
     }
 
-    #can {
-      background: #000;
+    #sheet {
+        border:1px solid black;
+        background: #000;
+    }
+    .draw-container .canvas-container{
+      margin: auto;
     }
   </style>
   <script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js'></script>
-  <style type='text/css'>
-      #sheet {
-          border:1px solid black;
-          background: #000;
-      }
-  </style>
-  <script type='text/javascript'>
-      window.onload=function(){
-          var canvas = new fabric.Canvas('sheet');
-          canvas.isDrawingMode = true;
-          canvas.freeDrawingBrush.width = 20;
-          canvas.freeDrawingBrush.color = "#fff";
-      }
-  </script>
 </head>
 
 <body>
@@ -99,36 +89,33 @@
         class="mb-4">
     </header>
 
+    <div class="row">
+      <div class="col-8 offset-2">
+        <div class="row py-4">
+          <div class="col-12">
+            <!-- Upload image input-->
+            <div class="input-group mb-3 px-2 py-2 rounded-pill bg-white shadow-sm">
+              <input id="upload" type="file" onchange="readURL(this);" class="form-control border-0">
+              <label id="upload-label" for="upload" class="font-weight-light text-muted">Choose file</label>
+              <div class="input-group-append">
+                <label for="upload" class="btn btn-light m-0 rounded-pill px-4">
+                  <i class="fa fa-cloud-upload mr-2 text-muted"></i>
+                  <small class="text-uppercase font-weight-bold text-muted">Choose file</small></label>
+              </div>
+            </div>
     
-
-    <canvas id="sheet" width="400" height="400"></canvas>
-
-    
-
-    <div class="row py-4">
-      <div class="col-lg-6 mx-auto">
-
-        <!-- Upload image input-->
-        <div class="input-group mb-3 px-2 py-2 rounded-pill bg-white shadow-sm">
-          <input id="upload" type="file" onchange="readURL(this);" class="form-control border-0">
-          <label id="upload-label" for="upload" class="font-weight-light text-muted">Choose file</label>
-          <div class="input-group-append">
-            <label for="upload" class="btn btn-light m-0 rounded-pill px-4">
-              <i class="fa fa-cloud-upload mr-2 text-muted"></i>
-              <small class="text-uppercase font-weight-bold text-muted">Choose file</small></label>
+            <!-- Uploaded image area-->
+            <p class="font-italic text-white text-center">The image uploaded will be rendered inside the box below.</p>
+            <div class="image-area mt-4">
+              <img id="imageResult" src="#" alt="" class="img-fluid rounded shadow-sm mx-auto d-block">
+            </div>
+            <canvas id="sheet" width="400" height="400"></canvas>
           </div>
-        </div>
-
-        <!-- Uploaded image area-->
-        <p class="font-italic text-white text-center">The image uploaded will be rendered inside the box below.</p>
-        <div class="image-area mt-4">
-          <img id="imageResult" src="#" alt="" class="img-fluid rounded shadow-sm mx-auto d-block">
         </div>
         <p id="result" class="text-center mt-2"></p>
         <div class="d-flex mt-2">
           <button class="btn btn-primary mx-auto" id="detect">DETECT</button>
         </div>
-
       </div>
     </div>
   </div>
@@ -180,27 +167,22 @@
     }
 
     $("#detect").click(function () {
-      $("#result").text(``)
-
-      // TODO: Read image and send ajax to /recognize
-      // var img = $('#upload').prop('files');
-      // if (!img || !img.length) {
-      //   // TODO: Alert should have input an image
-      //   return;
-      // }
-
+      $("#result").text(``);
       var formData = new FormData();
-      // formData.append('file', img[0]);
 
-      const canvas = document.getElementById('sheet');
-      // console.log({width: width, height: height})
-      canvas.toBlob(function(blob) {
-      //   console.log(blob)
-        formData.append('file', blob, 'canvas.png');
+      var currentTab = $(".nav-item.nav-link.active").attr("id");
+      if(currentTab == "upload-tab"){
+        var img = $('#upload').prop('files');
+        formData.append('file', img[0]);
         sendRequest(formData)
-      });
+      } else {
+        const canvas = document.getElementById('sheet');
+        canvas.toBlob(function(blob) {
+          formData.append('file', blob, 'canvas.png');
+          sendRequest(formData)          
+        });
+      }
 
-      
     })
 
     function sendRequest(formData) {
@@ -214,6 +196,22 @@
           $("#result").text(`Giá trị dự đoán: ${data.value}`)
         }
       });
+    }
+
+    $(".nav-link").click(function() {
+      if($(this).attr("id") == "draw-tab") {
+        var canvas = new fabric.Canvas('sheet');
+        canvas.isDrawingMode = true;
+        canvas.freeDrawingBrush.width = 20;
+        canvas.freeDrawingBrush.color = "#fff";
+      }
+    })
+
+    window.onload = function() {
+      var canvas = new fabric.Canvas('sheet');
+      canvas.isDrawingMode = true;
+      canvas.freeDrawingBrush.width = 20;
+      canvas.freeDrawingBrush.color = "#fff";
     }
 
   </script>
