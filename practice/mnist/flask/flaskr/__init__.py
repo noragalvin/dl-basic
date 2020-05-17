@@ -17,6 +17,8 @@ from keras.datasets import mnist
 from keras.models import model_from_json
 
 
+
+
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -27,6 +29,8 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+
+    
 
     @app.route('/', methods=['GET'])
     def index():
@@ -53,7 +57,6 @@ def create_app(test_config=None):
 
         p.load_model('model.json')
         p.compile_model()
-        p.evaluate(0)
 
         value = p.predict(im2arr)
         # print()
@@ -155,28 +158,3 @@ class MNIST_CNN:
       self.model.load_weights("model.h5")
       print("Loaded model from disk")
 
-# (X_train, y_train), (X_test, y_test) = mnist.load_data()
-# print(X_test[0])
-
-# p = MNIST_CNN(X_train, y_train, X_test, y_test)
-# # p.init_model()
-# # p.compile_model()
-# # p.fit(32, 10, 1)
-# # p.save_model('model.json')
-# # p.evaluate(0)
-
-# p.load_model('model.json')
-# p.compile_model()
-# p.evaluate(0)
-# # for index in range(len(X_test)):
-# #   p.predict(X_test[index])
-# #   print("Gia tri thuc te: ", y_test[index])
-
-# p.predict(X_test[100])
-# print("Gia tri thuc te: ", y_test[100])
-
-# # image = X_test[100]
-# # image = np.array(image, dtype='float')
-# # pixels = image.reshape((28, 28))
-# # plt.imshow(pixels, cmap='gray')
-# # plt.show()
