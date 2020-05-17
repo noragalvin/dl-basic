@@ -111,7 +111,7 @@
       <div class="col-8 offset-2">
         <div class="button-group text-center">
           <button class="btn btn-primary" id="upload-btn">Upload File Mode</button>
-          <button class="btn btn-secondary"  id="draw-btn">Draw Mode</button>
+          <button class="btn btn-secondary" id="draw-btn">Draw Mode</button>
         </div>
         <div class="row py-4">
           <div class="col-12" id="upload-container">
@@ -202,18 +202,18 @@
       $("#result").text(``);
       var formData = new FormData();
 
-      var currentTab = $(".nav-item.nav-link.active").attr("id");
-      // if(currentTab == "upload-tab"){
-      //   var img = $('#upload').prop('files');
-      //   formData.append('file', img[0]);
-      //   sendRequest(formData)
-      // } else {
+      var currentTab = $("#upload-container").is(":visible");
+      if(currentTab){
+        var img = $('#upload').prop('files');
+        formData.append('file', img[0]);
+        sendRequest(formData)
+      } else {
         const canvas = document.getElementById('sheet');
         canvas.toBlob(function(blob) {
           formData.append('file', blob, 'canvas.png');
           sendRequest(formData)          
         });
-      // }
+      }
 
     })
 
