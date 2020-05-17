@@ -40,7 +40,12 @@ def create_app(test_config=None):
         img = Image.open(f.stream).convert("L")
         img = img.resize((28,28))
         im2arr = np.array(img)
-        im2arr = im2arr.reshape(1,28,28,1)
+        # im2arr = im2arr.reshape(1,28,28,1)
+
+        # image = np.array(image, dtype='float')
+        # pixels = im2arr.reshape((28, 28))
+        # plt.imshow(pixels, cmap='gray')
+        # plt.show()
 
         (X_train, y_train), (X_test, y_test) = mnist.load_data()
 

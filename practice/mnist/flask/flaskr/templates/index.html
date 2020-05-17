@@ -64,7 +64,26 @@
       background-color: #757f9a;
       background-image: linear-gradient(147deg, #757f9a 0%, #d7dde8 100%);
     }
+
+    #can {
+      background: #000;
+    }
   </style>
+  <script type='text/javascript' src='http://cdnjs.cloudflare.com/ajax/libs/fabric.js/1.4.0/fabric.min.js'></script>
+  <style type='text/css'>
+      #sheet {
+          border:1px solid black;
+          background: #000;
+      }
+  </style>
+  <script type='text/javascript'>
+      window.onload=function(){
+          var canvas = new fabric.Canvas('sheet');
+          canvas.isDrawingMode = true;
+          canvas.freeDrawingBrush.width = 20;
+          canvas.freeDrawingBrush.color = "#fff";
+      }
+  </script>
 </head>
 
 <body>
@@ -80,6 +99,11 @@
         class="mb-4">
     </header>
 
+    
+
+    <canvas id="sheet" width="400" height="400"></canvas>
+
+    
 
     <div class="row py-4">
       <div class="col-lg-6 mx-auto">
@@ -156,17 +180,30 @@
     }
 
     $("#detect").click(function () {
+      $("#result").text(``)
+
       // TODO: Read image and send ajax to /recognize
-      var img = $('#upload').prop('files');
-      if (!img || !img.length) {
-        // TODO: Alert should have input an image
-        return;
-      }
+      // var img = $('#upload').prop('files');
+      // if (!img || !img.length) {
+      //   // TODO: Alert should have input an image
+      //   return;
+      // }
 
-      console.log(img)
       var formData = new FormData();
-      formData.append('file', img[0]);
+      // formData.append('file', img[0]);
 
+      const canvas = document.getElementById('sheet');
+      // console.log({width: width, height: height})
+      canvas.toBlob(function(blob) {
+      //   console.log(blob)
+        formData.append('file', blob, 'canvas.png');
+        sendRequest(formData)
+      });
+
+      
+    })
+
+    function sendRequest(formData) {
       $.ajax({
         url: 'recognize',
         type: 'POST',
@@ -174,13 +211,13 @@
         processData: false,
         contentType: false,
         success: function (data) {
-          console.log({ data: data });
           $("#result").text(`Giá trị dự đoán: ${data.value}`)
         }
       });
-    })
+    }
 
   </script>
+
 </body>
 
 </html>
